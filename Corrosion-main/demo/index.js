@@ -13,7 +13,21 @@ const proxy = new Corrosion({
 
 proxy.bundleScripts();
 
+// Allowing additional HTTP methods
 server.on('request', (request, response) => {
-    if (request.url.startsWith(proxy.prefix)) return proxy.request(request, response);
+    if (request.url.startsWith(proxy.prefix)) {
+        // If the URL matches the proxy prefix, forward the request
+        return proxy.request(request, response);
+    }
+    
+    // Handle other HTTP methods (POST, PUT, DELETE, etc.)
+    if (['POST', 'PUT', 'DELETE'].includes(request.method)) {
+        response.writeHead(405, { 'Content-Type': 'text/plain' });
+        return response.end(`Method ${request.method} Not Allowed`);
+    }
+    
+    // Default handling for other cases
     response.end(fs.readFileSync(__dirname + '/index.html', 'utf-8'));
-}).on('upgrade', (clientRequest, clientSocket, clientHead) => proxy.upgrade(clientRequest, clientSocket, clientHead)).listen(443);
+}).on('upgrade', (clientRequest, clientSocket, clientHead) => {
+    proxy.upgrade(clientRequest, clientSocket, clientHead);
+}).listen(443);
